@@ -66,6 +66,54 @@ export const FAILURE_MODES = {
   PARTIAL: { label: "Partially correct", color: "warn" },
 };
 
+// Model comparison across 4 local Ollama models on three independent benchmarks:
+// 1. Codegen task (hand-written SQL validator, edge cases)
+// 2. Tool-calling capability (can the model invoke LangChain tools?)
+// 3. Full eval (if tool-calling passes, how many of 18 questions answered correctly)
+export const modelComparison = {
+  date: "2026-08-23",
+  summary: "Benchmarked qwen2.5:7b, deepseek-coder-v2-small, qwen2.5-coder:7b, and gemma3:4b across three stages. Only qwen2.5:7b passed the tool-calling gate and ran full eval. Three distinct failure modes identified: hard API rejection (gemma3:4b, deepseek-coder-v2-small), silent no-call (qwen2.5-coder:7b), and full support (qwen2.5:7b).",
+  models: [
+    {
+      name: "qwen2.5:7b",
+      codegenScore: "6/6",
+      codegenTime: "29.6s",
+      toolCallingScore: "supported",
+      toolCallingTime: "4.4s",
+      fullEvalScore: "10/18 (55.6%)",
+      fullEvalNote: "Only model passing tool-calling gate. 3 silent terminations, 5 false/wrong answers, 10 correct.",
+    },
+    {
+      name: "deepseek-coder-v2-small",
+      codegenScore: "3/6",
+      codegenTime: "24.7s",
+      toolCallingScore: "unsupported",
+      toolCallingTime: "2.3s",
+      fullEvalScore: "N/A",
+      fullEvalNote: "Hard API rejection: 'does not support tools'. Ollama server explicitly blocks tool invocation.",
+    },
+    {
+      name: "qwen2.5-coder:7b",
+      codegenScore: "5/6",
+      codegenTime: "32.6s",
+      toolCallingScore: "no_tool_call",
+      toolCallingTime: "4.4s",
+      fullEvalScore: "N/A",
+      fullEvalNote: "Model responds but never invokes the tool. Prints tool-call JSON as plain text instead of using LangChain binding.",
+    },
+    {
+      name: "gemma3:4b",
+      codegenScore: "4/6",
+      codegenTime: "30.9s",
+      toolCallingScore: "unsupported",
+      toolCallingTime: "3.0s",
+      fullEvalScore: "N/A",
+      fullEvalNote: "Hard API rejection: 'does not support tools'. Same as deepseek-coder-v2-small — Ollama API itself doesn't enable tool support for this model.",
+    },
+  ],
+  conclusion: "qwen2.5:7b is the only viable choice for the agent from this set. The comparison also documents three distinct tool-calling failure modes: (1) API-level rejection, (2) no-call without error, (3) full support. This is reproducible evidence for model selection.",
+};
+
 export const evalRuns = [
   {
     id: "2026-08-20-qwen2.5-7b",
