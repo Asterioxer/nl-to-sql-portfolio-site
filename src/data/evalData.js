@@ -114,6 +114,118 @@ export const modelComparison = {
   conclusion: "qwen2.5:7b is the only viable choice for the agent from this set. The comparison also documents three distinct tool-calling failure modes: (1) API-level rejection, (2) no-call without error, (3) full support. This is reproducible evidence for model selection.",
 };
 
+// Full per-model detail, sourced directly from the eval/compare_models.py
+// run log (2026-08-23). Every mismatch, error string, and timing here is
+// copied verbatim from the actual terminal output — not summarized.
+export const modelDetails = {
+  "qwen2.5:7b": {
+    slug: "qwen2-5-7b",
+    name: "qwen2.5:7b",
+    verdict: "pass",
+    tagline: "The only model that made it through all three gates.",
+    codegen: {
+      score: "6/6",
+      time: "29.6s",
+      mismatches: [],
+      note: "Clean pass on every hand-written validator edge case — no mismatches, no harness errors.",
+    },
+    toolCalling: {
+      result: "supported",
+      time: "4.4s",
+      detail: "Tool call made: get_current_count",
+      note: "Model correctly bound to the LangChain tool schema and invoked it on the first attempt.",
+    },
+    fullEval: {
+      applicable: true,
+      passed: 10,
+      total: 18,
+      silentTerminations: 3,
+      errors: 0,
+      note: "Only model to pass the tool-calling gate, so it's the only one that ran the full 18-question suite. See the question-by-question breakdown below (2026-08-20 run — question wording and grading are identical to the 2026-08-23 run, whose only difference was 1 additional silent termination flipping the pass count from 9 to 10 depending on run variance).",
+    },
+  },
+  "deepseek-coder-v2-small": {
+    slug: "deepseek-coder-v2-small",
+    name: "deepseek-coder-v2-small",
+    verdict: "fail",
+    tagline: "Hard-rejected by Ollama before it ever got a chance to write SQL.",
+    codegen: {
+      score: "3/6",
+      time: "24.7s",
+      mismatches: [
+        { input: "SELECT * FROM users", expected: "True", got: "False" },
+        { input: "SELECT * FROM users;", expected: "True", got: "False" },
+        { input: "SELECT update_count FROM stats", expected: "True", got: "False" },
+      ],
+      note: "Failed on plain, unambiguous single-table SELECTs — not edge cases. Half the failures were on the simplest possible query shape.",
+    },
+    toolCalling: {
+      result: "unsupported",
+      time: "2.3s",
+      detail: "ResponseError: registry.ollama.ai/library/deepseek-coder-v2-small:latest does not support tools (status code: 400)",
+      note: "Hard API-level rejection — Ollama itself refuses to bind tools to this model. No amount of prompt engineering fixes this; it's a model capability gap, not an agent bug.",
+    },
+    fullEval: {
+      applicable: false,
+      reason: "Never reached the full eval stage — blocked at the tool-calling gate.",
+    },
+  },
+  "qwen2.5-coder:7b": {
+    slug: "qwen2-5-coder-7b",
+    name: "qwen2.5-coder:7b",
+    verdict: "fail",
+    tagline: "Writes good SQL, but silently refuses to ever call a tool.",
+    codegen: {
+      score: "5/6",
+      time: "32.6s",
+      mismatches: [],
+      harnessError: "ERROR on 'SELECT update_count FROM stats': name 'keyword' is not defined",
+      note: "Best raw codegen score of the non-qwen2.5:7b models — the one failure here is a bug in the test harness itself (an undefined 'keyword' reference), not necessarily the model.",
+    },
+    toolCalling: {
+      result: "no_tool_call",
+      time: "4.4s",
+      detail: "Model responded but did not invoke the tool",
+      note: "The most deceptive failure mode of the four: no error, no rejection — it just prints tool-call-shaped JSON as plain chat text instead of using LangChain's actual binding. Would silently produce zero results in production with no exception to catch.",
+    },
+    fullEval: {
+      applicable: false,
+      reason: "Never reached the full eval stage — blocked at the tool-calling gate (silent no-call, not an error).",
+    },
+  },
+  "gemma3:4b": {
+    slug: "gemma3-4b",
+    name: "gemma3:4b",
+    verdict: "fail",
+    tagline: "Same hard rejection as deepseek-coder-v2-small.",
+    codegen: {
+      score: "4/6",
+      time: "30.9s",
+      mismatches: [
+        { input: "SELECT * FROM users;", expected: "True", got: "False" },
+        { input: "SELECT update_count FROM stats", expected: "True", got: "False" },
+      ],
+      note: "Passed the unterminated SELECT * but failed the same query with a trailing semicolon — inconsistent handling of statement terminators.",
+    },
+    toolCalling: {
+      result: "unsupported",
+      time: "3.0s",
+      detail: "ResponseError: registry.ollama.ai/library/gemma3:4b does not support tools (status code: 400)",
+      note: "Identical failure mode to deepseek-coder-v2-small — the Ollama API itself doesn't expose tool support for this model, regardless of prompt or agent design.",
+    },
+    fullEval: {
+      applicable: false,
+      reason: "Never reached the full eval stage — blocked at the tool-calling gate.",
+    },
+  },
+};
+
+export const modelList = Object.values(modelDetails);
+
+export function getModelBySlug(slug) {
+  return modelList.find((m) => m.slug === slug) ?? null;
+}
+
 export const evalRuns = [
   {
     id: "2026-08-20-qwen2.5-7b",
