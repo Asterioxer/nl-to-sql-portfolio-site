@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Link } from 'react-router-dom'
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { modelList } from '../data/evalData.js'
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [modelsOpen, setModelsOpen] = useState(false)
+  const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
@@ -12,6 +14,24 @@ export default function Header() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // Scrolls to an in-page section (#architecture, #evaluation). If we're
+  // not already on the home page, navigate there first, then scroll once
+  // the page has rendered. Using navigate()+scrollIntoView instead of a
+  // plain <a href="/#id"> because HashRouter treats everything after '#'
+  // as a route path, not a scroll anchor — a plain anchor tag would try
+  // to route to a nonexistent page instead of scrolling.
+  function scrollToSection(id) {
+    setModelsOpen(false)
+    if (location.pathname !== '/') {
+      navigate('/')
+      setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+      }, 50)
+    } else {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
 
   return (
     <nav className={`site-nav ${scrolled ? 'site-nav--scrolled' : ''}`}>
@@ -25,12 +45,20 @@ export default function Header() {
           <NavLink to="/" end className="site-nav__link">
             Overview
           </NavLink>
-          <a href="/#architecture" className="site-nav__link">
+          <button
+            type="button"
+            className="site-nav__link site-nav__link--btn"
+            onClick={() => scrollToSection('architecture')}
+          >
             Architecture
-          </a>
-          <a href="/#evaluation" className="site-nav__link">
+          </button>
+          <button
+            type="button"
+            className="site-nav__link site-nav__link--btn"
+            onClick={() => scrollToSection('evaluation')}
+          >
             Evaluation
-          </a>
+          </button>
 
           <div
             className="site-nav__dropdown"

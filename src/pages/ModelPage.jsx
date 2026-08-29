@@ -30,7 +30,7 @@ export default function ModelPage() {
     return <Navigate to="/" replace />
   }
 
-  const qwenRun = evalRuns.find((r) => r.model.startsWith('qwen2.5:7b'))
+  const qwenRun = evalRuns.find((r) => r.id === '2026-08-20-qwen2.5-7b')
   const showFullEvalTable = model.fullEval.applicable && model.name === 'qwen2.5:7b' && qwenRun
 
   return (
