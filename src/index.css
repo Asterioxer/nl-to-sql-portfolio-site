@@ -299,6 +299,20 @@ section {
 
 /* ---------- Eval summary stats ---------- */
 
+.eval__run2-callout {
+  background: rgba(124, 156, 255, 0.06);
+  border: 1px solid rgba(124, 156, 255, 0.25);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  margin-bottom: 40px;
+}
+
+.eval__run2-callout h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: var(--accent);
+}
+
 .eval__summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -677,4 +691,16 @@ section {
   color: var(--text-dim);
   font-size: 14px;
   border-bottom: none;
+}
+
+.footer__link {
+  color: var(--text-dim);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.footer__link:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }

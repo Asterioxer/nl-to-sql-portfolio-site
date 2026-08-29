@@ -63,7 +63,7 @@ export default function Header() {
           </div>
 
           <a
-            href="https://github.com"
+            href="https://github.com/Asterioxer/nl-to-sql-portfolio-site"
             target="_blank"
             rel="noreferrer"
             className="site-nav__link site-nav__link--ghost"

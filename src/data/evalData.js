@@ -228,9 +228,33 @@ export function getModelBySlug(slug) {
 
 export const evalRuns = [
   {
+    id: "2026-08-28-qwen2.5-7b-run2",
+    date: "2026-08-28",
+    model: "qwen2.5:7b (local, Ollama)",
+    isLatest: true,
+    summary:
+      "Second full run of the same 18-question set, using the now-automated eval/compare_models.py harness graded against tests/ground_truth.py (the same checks manually verified in Run 1). Same model, same seeded database, same questions — run to test evaluation reliability itself, not just the agent.",
+    totalQuestions: 18,
+    headlineFinding:
+      "Two questions (Q10 and Q14) flipped pass/fail between Run 1 and Run 2 with temperature=0, identical seed, identical questions. This is a more important finding than either run's raw score: it means single-run evaluations of small local LLMs aren't reliable enough to certify a fix on their own — a claim like 'fixed X' needs re-verification across multiple runs, not one pass/fail count.",
+    comparisonToRun1: [
+      { num: 5, question: "Orders by customers in India", run1: "156 (ambiguous)", run2: "174", changed: true, note: "Different interpretation chosen; both are defensible readings of an ambiguous question." },
+      { num: 10, question: "Top revenue category", run1: "FAIL — wrong category & number", run2: "PASS — exact match", changed: true, note: "Flipped fail → pass. Same model, same question, same data." },
+      { num: 14, question: "Month-over-month revenue 2025", run1: "PASS — exact match, all 12 months", run2: "FAIL — different numbers entirely", changed: true, note: "Flipped pass → fail. Jan $19,527 vs Run 1's $16,961; Nov $36,133 vs Run 1's $29,927." },
+      { num: 1, question: "Customer count", run1: "Silent termination", run2: "Still failing (25s, non-answer)", changed: false, note: "Silent termination is the one failure mode that reproduced consistently across both runs — evidence it's a structural bug, not model variance." },
+    ],
+    score: "10/18 (56%)",
+    toolingAddedSinceRun1: [
+      "tests/ground_truth.py — Run 1's manual verification encoded as automated checker functions.",
+      "eval/compare_models.py stage 3 — runs the real 18-question set through the actual src/agent.py code path per model.",
+      "src/query_log.py end-to-end turn logging (duration_ms, session tagging) + eval/summarize_log.py for latency percentiles.",
+    ],
+  },
+  {
     id: "2026-08-20-qwen2.5-7b",
     date: "2026-08-20",
     model: "qwen2.5:7b (local, Ollama)",
+    isLatest: false,
     summary:
       "First full evaluation pass after schema grounding (Day 2) and the SQL safety guardrail (Day 3). Ground truth for every question was independently verified by re-running equivalent SQL directly against the seeded database — not read from the agent's own claims.",
     totalQuestions: 18,

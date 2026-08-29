@@ -8,10 +8,17 @@ function ModeBadge({ mode }) {
 }
 
 export default function EvalResults() {
-  const run = evalRuns[evalRuns.length - 1] // most recent run
+  const run = evalRuns.find((r) => r.isLatest) ?? evalRuns[0]
+  const priorRun = evalRuns.find((r) => r.id === "2026-08-20-qwen2.5-7b")
 
-  const total = run.totalQuestions
-  const passCount = run.results.PASS
+  // Run 2 doesn't have the full per-question failure-mode breakdown
+  // (results/questions/actionItems) that Run 1 has — it's a targeted
+  // re-run focused on comparing against Run 1, not a fresh full
+  // taxonomy pass. Render Run 2's comparison summary, then fall back
+  // to Run 1's full breakdown underneath for the detailed table.
+  const detailRun = run.results ? run : priorRun
+  const total = detailRun.totalQuestions
+  const passCount = detailRun.results.PASS
   const accuracyPct = Math.round((passCount / total) * 100)
 
   return (
@@ -29,6 +36,41 @@ export default function EvalResults() {
           </p>
         </Reveal>
 
+        <Reveal delay={0.06}>
+          <div className="eval__run2-callout">
+            <h3>Latest finding — evaluation reliability, not just accuracy</h3>
+            <p className="section-intro">{run.headlineFinding}</p>
+            <div className="eval__table-wrap">
+              <table className="eval-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Question</th>
+                    <th>Run 1 (2026-08-20)</th>
+                    <th>Run 2 (2026-08-28)</th>
+                    <th>Note</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {run.comparisonToRun1.map((c) => (
+                    <tr key={c.num} className={c.changed ? 'row--highlight' : ''}>
+                      <td>{c.num}</td>
+                      <td>{c.question}</td>
+                      <td>{c.run1}</td>
+                      <td>{c.run2}</td>
+                      <td className="eval-table__note">{c.note}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="eval__note">
+              Run 2 score: <strong>{run.score}</strong> &nbsp;·&nbsp; Same seeded
+              database, same 18 questions, same model, temperature=0.
+            </p>
+          </div>
+        </Reveal>
+
         <Reveal delay={0.08}>
           <div className="eval__summary">
             <div className="summary-stat summary-stat--pass">
@@ -38,29 +80,29 @@ export default function EvalResults() {
               </div>
             </div>
             <div className="summary-stat summary-stat--fail-severe">
-              <div className="summary-stat__value">{run.results.HALLUCINATION}</div>
+              <div className="summary-stat__value">{detailRun.results.HALLUCINATION}</div>
               <div className="summary-stat__label">Hallucinated result</div>
             </div>
             <div className="summary-stat summary-stat--fail">
               <div className="summary-stat__value">
-                {run.results.SILENT_TERMINATION}
+                {detailRun.results.SILENT_TERMINATION}
               </div>
               <div className="summary-stat__label">Silent early termination</div>
             </div>
             <div className="summary-stat summary-stat--fail">
-              <div className="summary-stat__value">{run.results.LOGIC_BUG}</div>
+              <div className="summary-stat__value">{detailRun.results.LOGIC_BUG}</div>
               <div className="summary-stat__label">Logic / aggregation bugs</div>
             </div>
             <div className="summary-stat summary-stat--warn">
-              <div className="summary-stat__value">{run.results.AMBIGUITY}</div>
+              <div className="summary-stat__value">{detailRun.results.AMBIGUITY}</div>
               <div className="summary-stat__label">Unresolved ambiguity</div>
             </div>
           </div>
         </Reveal>
 
         <p className="eval__note">
-          <strong>Model:</strong> {run.model} &nbsp;·&nbsp;
-          <strong>Run date:</strong> {run.date}
+          <strong>Model:</strong> {detailRun.model} &nbsp;·&nbsp;
+          <strong>Run date:</strong> {detailRun.date} <em>(detailed failure-mode breakdown below is from this run; see the reliability finding above for the latest re-run)</em>
         </p>
 
         <Reveal delay={0.1}>
@@ -75,7 +117,7 @@ export default function EvalResults() {
                 </tr>
               </thead>
               <tbody>
-                {run.questions.map((q) => (
+                {detailRun.questions.map((q) => (
                   <tr key={q.num} className={q.mode === 'HALLUCINATION' ? 'row--highlight' : ''}>
                     <td>{q.num}</td>
                     <td>{q.question}</td>
@@ -94,7 +136,7 @@ export default function EvalResults() {
           <div className="eval__actions">
             <h3>Action items from this run</h3>
             <ul>
-              {run.actionItems.map((item, i) => (
+              {detailRun.actionItems.map((item, i) => (
                 <li key={i}>{item}</li>
               ))}
             </ul>
